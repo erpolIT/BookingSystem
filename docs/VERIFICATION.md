@@ -15,7 +15,9 @@ Local checks completed on 2026-10-17:
   dependencies and IDE directories are ignored. This is a scoped heuristic check,
   not a guarantee that every possible secret format is detectable.
 
-The GitHub Actions workflow is prepared, but has not yet run on GitHub.
+GitHub Actions CI passed on 2026-10-17 for the published application commit `cec2fc97c4c3ccba35c0f6c190f32eb0b129ec73`.
+
+[Verified CI run](https://github.com/erpolIT/BookingSystem/actions/runs/39037037157) includes backend tests, frontend build/lint, fresh PostgreSQL migrations, demo seeding and API integration checks.
 This record covers local verification before the first GitHub publication.
 
 English interface update: frontend build, ESLint and .NET build passed. Browser checks confirmed English labels, PLN prices and Europe/Warsaw appointment times; documentation screenshots refreshed. Native browser date-picker controls follow the browser language.
