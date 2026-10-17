@@ -22,8 +22,11 @@ A booking is stored in a transaction. A transaction-scoped PostgreSQL advisory
 lock serializes the same idempotency key; a unique account/key index protects
 against duplicates. Matching retries return the original booking resource (200),
 including its current cancelled status if it has subsequently been cancelled.
-Different payloads with the same account/key return 409. Independent requests for
-the same provider/time are protected by the exclusion constraint, returning 409.
+Different payloads with the same account/key return 409. Before checking availability,
+a separate transaction-scoped advisory lock serializes writes for the same provider.
+This prevents PostgreSQL exclusion-check deadlocks between cooperating API requests.
+The exclusion constraint remains the database invariant and protects writes outside
+that application lock as well. Competing requests for the same provider/time return 409.
 A resource replay is intentional; this API does not replay an immutable byte-for-byte
 snapshot of the original HTTP response.
 

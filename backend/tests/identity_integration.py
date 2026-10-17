@@ -67,12 +67,13 @@ print('Idempotency key scoped to account: same key creates a separate own bookin
 assert a.call('/bookings/'+str(bid)+'/cancel','POST')[0]==204
 assert b.call('/bookings/'+str(booking2['id'])+'/cancel','POST')[0]==204
 race_payload={**payload,'startTime':slots[8]['startTime']}
-with ThreadPoolExecutor(max_workers=2) as pool:
- race_results=list(pool.map(lambda client:client.call('/bookings','POST',race_payload,{'Idempotency-Key':str(uuid.uuid4())}),clients))
-assert sorted(status for status,_ in race_results)==[201,409],[(status,body.get('code') if isinstance(body,dict) else None) for status,body in race_results]
-for client,(status,body) in zip(clients,race_results):
- if status==201:assert client.call('/bookings/'+str(body['id'])+'/cancel','POST')[0]==204
-print('Independent concurrent requests for one slot: one 201, one 409',flush=True)
+for attempt in range(5):
+ with ThreadPoolExecutor(max_workers=2) as pool:
+  race_results=list(pool.map(lambda client:client.call('/bookings','POST',race_payload,{'Idempotency-Key':str(uuid.uuid4())}),clients))
+ assert sorted(status for status,_ in race_results)==[201,409],[(status,body.get('code') if isinstance(body,dict) else None) for status,body in race_results]
+ for client,(status,body) in zip(clients,race_results):
+  if status==201:assert client.call('/bookings/'+str(body['id'])+'/cancel','POST')[0]==204
+print('Five independent booking races: each returned one 201 and one 409, without server errors',flush=True)
 assert a.call('/auth/logout','POST')[0]==204
 assert a.call('/bookings')[0]==401
 print('Owner cancellations: 204; logout removes private access; test bookings cancelled',flush=True)

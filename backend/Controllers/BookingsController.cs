@@ -87,6 +87,12 @@ public class BookingsController : ControllerBase
             .FirstOrDefaultAsync(service => service.Id == request.ServiceId, cancellationToken);
         if (service is null) return NotFound("Service does not exist.");
 
+        // Exclusion checks on simultaneous inserts may deadlock in PostgreSQL.
+        // Serialize each provider's booking writes before reading availability.
+        // The two-int namespace is distinct from the bigint idempotency locks.
+        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(72100, {service.ProviderId});", cancellationToken);
+
         var slots = await _availability.GetSlots(service, AvailabilityService.GetLocalDate(start), cancellationToken);
         if (!slots.Any(slot => slot.StartTime == start))
             return Conflict(new { code = "slot_unavailable", message = "The requested time is unavailable or outside the booking schedule." });
