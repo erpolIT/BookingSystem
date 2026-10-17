@@ -1,0 +1,13 @@
+@api = http://localhost:5130
+
+### Public providers
+GET {{api}}/api/providers
+
+### Public services
+GET {{api}}/api/services
+
+### Current session
+GET {{api}}/api/auth/me
+
+### Fetch a CSRF token before unsafe requests
+GET {{api}}/api/auth/csrf

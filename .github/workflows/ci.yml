@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: booking_ci
+          POSTGRES_USER: booking_ci
+          POSTGRES_PASSWORD: ci_disposable_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U booking_ci -d booking_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Disposable isolated CI database, not a real credential.
+      ConnectionStrings__BookingDatabase: Host=localhost;Port=5432;Database=booking_ci;Username=booking_ci;Password=ci_disposable_password;SSL Mode=Disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Backend tests
+        run: dotnet test BookingSystem.slnx --nologo
+      - name: Restore migration tool
+        working-directory: backend
+        run: dotnet tool restore
+      - name: Create test schema
+        working-directory: backend
+        run: dotnet ef database update --no-build
+      - name: Seed demo data
+        run: dotnet run --project backend --no-launch-profile --no-build -- --seed-demo
+      - name: Frontend checks
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+      - name: API integration checks
+        shell: bash
+        run: |
+          dotnet run --project backend --no-launch-profile --no-build --urls http://localhost:5130 > /tmp/booking-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5130/api/providers > /dev/null; then break; fi
+            sleep 1
+          done
+          BOOKING_TEST_API=http://localhost:5130/api python3 backend/tests/identity_integration.py
+      - name: API logs on failure
+        if: failure()
+        run: cat /tmp/booking-api.log 2>/dev/null || true

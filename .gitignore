@@ -1,0 +1,33 @@
+# Build outputs and dependencies
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/TestResults/
+**/coverage/
+*.tsbuildinfo
+
+# IDE and operating system
+.idea/
+.vs/
+.vscode/
+.DS_Store
+*.user
+*.suo
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+**/secrets.json
+**/appsettings.Local.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.log
+__pycache__/
+*.pyc
+
+# Personal interview preparation (kept locally)
+/docs/INTERVIEW_GUIDE.pl.md

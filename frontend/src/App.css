@@ -1,0 +1,58 @@
+.booking-page { max-width: 980px; margin: 0 auto; padding: 64px 24px; }
+.page-header { margin-bottom: 40px; }
+.brand { font-size: 14px; font-weight: 700; color: #25675c; margin-bottom: 28px; }
+h1 { font-size: clamp(32px, 6vw, 48px); letter-spacing: -1.5px; margin-bottom: 12px; }
+.page-header > p:last-child { color: #566562; line-height: 1.6; }
+.provider-section { background: white; border: 1px solid #dfe5df; border-radius: 20px; padding: 32px; }
+.section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+h2 { font-size: 22px; }
+.step-number { display: grid; place-items: center; background: #e6f1eb; color: #25675c; border-radius: 50%; width: 36px; height: 36px; font-weight: 700; }
+.provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.provider-card { background: #fff; border: 2px solid #e0e6e0; border-radius: 14px; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; color: inherit; }
+.provider-card:hover { border-color: #70a395; }
+.provider-card[aria-pressed="true"] { border-color: #25675c; background: #f0f7f3; }
+.provider-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #e9efea; color: #25675c; font-size: 24px; font-weight: 600; }
+.provider-name { font-size: 20px; font-weight: 600; }
+.provider-action { color: #25675c; font-size: 14px; }
+.selection-status { margin-top: 24px; min-height: 24px; color: #25675c; }
+.error-message { color: #922f2f; line-height: 1.6; }
+.retry-button { border: 0; border-radius: 8px; background: #25675c; color: white; padding: 10px 16px; margin-top: 16px; }
+@media (max-width: 540px) { .booking-page { padding: 32px 16px; } .provider-section { padding: 24px 16px; } }
+
+.service-section { margin-top: 24px; }
+.service-list { display: grid; gap: 12px; }
+.service-card { display: flex; align-items: center; gap: 20px; text-align: left; width: 100%; padding: 20px; border: 2px solid #e0e6e0; border-radius: 12px; background: white; color: inherit; }
+.service-card:hover { border-color: #70a395; }
+.service-card[aria-pressed="true"] { border-color: #25675c; background: #f0f7f3; }
+.service-description { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.service-duration { font-size: 14px; color: #566562; }
+.service-price { font-weight: 600; white-space: nowrap; }
+@media (max-width: 540px) { .service-card { flex-wrap: wrap; gap: 12px; } }
+
+.date-label { display: block; font-weight: 600; margin-bottom: 8px; }
+.date-input { font: inherit; color: inherit; background: white; border: 1px solid #a9b9b0; border-radius: 8px; padding: 10px 12px; max-width: 100%; }
+.date-input:focus-visible { outline: 3px solid #1b7768; outline-offset: 3px; }
+.timezone-note { color: #566562; font-size: 14px; margin: 16px 0; }
+.slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+.slot-button { padding: 12px; border: 2px solid #e0e6e0; border-radius: 8px; background: white; color: inherit; }
+.slot-button:hover { border-color: #70a395; }
+.slot-button[aria-pressed="true"] { background: #25675c; border-color: #25675c; color: white; }
+
+.booking-controls { border: 0; margin: 0; padding: 0; min-width: 0; }
+.booking-controls:disabled { opacity: .65; }
+.customer-fields { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
+.customer-fields input { font: inherit; padding: 12px; border: 1px solid #a9b9b0; border-radius: 8px; width: 100%; }
+.customer-fields input:focus-visible { outline: 3px solid #1b7768; outline-offset: 3px; }
+.customer-fields .retry-button { justify-self: start; }
+button:disabled { cursor: wait; }
+.booking-message { padding: 16px; margin: 24px 0; background: #fff0d8; color: #654317; border-radius: 10px; line-height: 1.6; }
+.confirmation { margin-bottom: 24px; border-color: #25675c; }
+.confirmation p { margin-top: 12px; }
+
+.auth-panel, .my-bookings { margin-bottom: 24px; }
+.auth-panel h2, .my-bookings h2 { margin-bottom: 20px; }
+.auth-description { margin-bottom: 20px; line-height: 1.6; }
+.text-button { background: transparent; border: 0; padding: 12px 0; color: #25675c; text-align: left; text-decoration: underline; }
+.booking-row { display: flex; gap: 20px; align-items: center; justify-content: space-between; padding: 20px 0; border-top: 1px solid #e0e6e0; }
+.booking-row p { margin-top: 8px; }
+@media (max-width: 540px) { .booking-row { flex-direction: column; align-items: flex-start; } }
