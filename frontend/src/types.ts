@@ -28,4 +28,7 @@ export type BookingPayload = {
   customerEmail: string
 }
 
-export type AuthUser = { id: string; email: string }
+export type AuthUser = { id: string; email: string; isAdministrator: boolean }
+export type Provider = { id: number; name: string }
+export type WorkingHours = { dayOfWeek: number; startTime: string; endTime: string }
+export type AdminBooking = Booking & { providerName: string; serviceName: string }

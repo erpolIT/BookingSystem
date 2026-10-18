@@ -6,6 +6,7 @@ import { SlotPicker } from './components/SlotPicker'
 import { BookingForm } from './components/BookingForm'
 import { AuthPanel } from './components/AuthPanel'
 import { MyBookings } from './components/MyBookings'
+import { AdminPanel } from './components/AdminPanel'
 import { mutateApi } from './api'
 
 type Provider = { id: number; name: string }
@@ -240,6 +241,14 @@ function App() {
       </header>
 
       <AuthPanel user={user} disabled={submitting || cancelling} onUserChange={handleUserChange} />
+      {user?.isAdministrator && <AdminPanel key={user.id} onChanged={() => {
+        setSelectedService(null)
+        setSelectedSlot(null)
+        setConfirmedBooking(null)
+        setAttempt((value) => value + 1)
+        setSlotsRevision((value) => value + 1)
+        setBookingsRevision((value) => value + 1)
+      }} />}
       {user && <MyBookings key={`${user.id}-${bookingsRevision}`}
         disabled={submitting || cancelling} onCancelled={handleBookingCancelled} />}
       {confirmedBooking && (
@@ -304,7 +313,7 @@ function App() {
       </section>
       {selectedProviderId !== null && (
         <ServicePicker
-          key={selectedProviderId}
+          key={`${selectedProviderId}-${attempt}`}
           providerId={selectedProviderId}
           selectedServiceId={selectedService?.id ?? null}
           onServiceSelect={handleServiceSelect}

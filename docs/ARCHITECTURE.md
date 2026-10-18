@@ -40,9 +40,15 @@ sessionStorage; a client can then inspect its own bookings after logging in.
 See [backend authentication](../backend/AUTHENTICATION.md). Read-only discovery
 is public; booking access is owner-only. Management writes require an Administrator
 role, with no public role-granting endpoint. Old unowned bookings remain unclaimed.
-The scope has no administrator UI, email delivery, payment processing or public deployment.
+The administrator UI supports adding providers/services, weekly schedules and
+daily appointment review/cancellation. `--grant-admin email` promotes an existing
+account through Identity; registration never accepts a role. Management lists
+require a Warsaw-local date, optionally a provider, and cap output at 500 entries
+with a truncation flag. Customer ownership rules remain unchanged.
+The scope has no email delivery, payment processing or public deployment.
 
-Schedules use one interval per weekday. Concurrent administrative schedule changes
-are not serialized with booking creation; the current portfolio flow uses seeded
-schedules, without a live schedule-editing UI. Availability is an advisory view,
-while the exclusion constraint is the final check against double booking.
+Schedules use one interval per weekday. Schedule updates/deletions share the
+provider advisory transaction lock with booking creation. Existing appointments
+are preserved when hours change; an administrator must review them separately.
+Availability is an advisory view, while the exclusion constraint is the final
+check against double booking.

@@ -74,6 +74,67 @@ for attempt in range(5):
  for client,(status,body) in zip(clients,race_results):
   if status==201:assert client.call('/bookings/'+str(body['id'])+'/cancel','POST')[0]==204
 print('Five independent booking races: each returned one 201 and one 409, without server errors',flush=True)
+# Public registration must never accept a role from a request payload.
+import subprocess,shutil
+from pathlib import Path
+admin=Client();admin_email='admin-test-'+uuid.uuid4().hex+'@example.com'
+admin_credentials={'email':admin_email,'password':'Test!Aa1'+secrets.token_hex(12),'isAdministrator':True,'roles':['Administrator']}
+assert admin.call('/auth/register','POST',admin_credentials)[0]==201
+assert admin.call('/auth/login','POST',admin_credentials)[1]['user']['isAdministrator'] is False
+assert admin.call(f'/admin/bookings?date={day}')[0]==403
+assert anon.call(f'/admin/bookings?date={day}')[0]==401
+dotnet=shutil.which('dotnet') or '/usr/local/share/dotnet/dotnet'
+root=Path(__file__).resolve().parents[2]
+for _ in range(2):
+ provision=subprocess.run([dotnet,'run','--project',str(root/'backend'),'--no-build','--no-launch-profile','--','--grant-admin',admin_email],capture_output=True,text=True,timeout=60)
+ assert provision.returncode==0,('admin provisioning failed',provision.returncode)
+# Existing cookies keep their original claims until a new sign-in.
+assert admin.call('/auth/me')[1]['user']['isAdministrator'] is False
+assert admin.call('/auth/logout','POST')[0]==204
+assert admin.call('/auth/login','POST',admin_credentials)[1]['user']['isAdministrator'] is True
+assert admin.call('/auth/me')[1]['user']['isAdministrator'] is True
+assert a.call('/auth/me')[1]['user']['isAdministrator'] is False
+for path,method,data in [('/services','POST',{'providerId':1,'name':'Denied','durationMinutes':30,'price':60}),('/providers/1/working-hours/1','PUT',{'startTime':'09:00','endTime':'17:00'}),('/providers/1/working-hours/1','DELETE',None),('/admin/bookings/1/cancel','POST',None)]:
+ assert a.call(path,method,data)[0]==403,(path,'normal user must be denied')
+assert admin.call('/providers','POST',{'name':'CSRF blocked'},csrf=False)[0]==400
+assert admin.call('/providers','POST',{'name':'  '})[0]==400
+status,provider=admin.call('/providers','POST',{'name':'Admin Test '+uuid.uuid4().hex[:8]});assert status==201
+pid=provider['id']
+assert admin.call('/services','POST',{'providerId':pid,'name':'Test service','durationMinutes':0,'price':0})[0]==400
+status,new_service=admin.call('/services','POST',{'providerId':pid,'name':'Test service','durationMinutes':30,'price':50});assert status==201
+hours_path=f'/providers/{pid}/working-hours/1'
+assert admin.call(hours_path,'PUT',{'startTime':'17:00','endTime':'09:00'})[0]==400
+assert admin.call(hours_path,'PUT',{'startTime':'09:00','endTime':'17:00'})[0]==204
+assert len(admin.call(f'/providers/{pid}/working-hours')[1])==1
+assert admin.call(hours_path,'PUT',{'startTime':'10:00','endTime':'16:00'})[0]==204
+assert len(admin.call(f'/providers/{pid}/working-hours')[1])==1
+_,new_slots=a.call(f'/services/{new_service["id"]}/available-slots?date={day}')
+assert len(new_slots)>0
+status,admin_booking=a.call('/bookings','POST',{'serviceId':new_service['id'],'startTime':new_slots[0]['startTime'],'customerName':'Admin Visibility Test','customerEmail':'admin-visibility@example.com'},{'Idempotency-Key':str(uuid.uuid4())});assert status==201
+aid=admin_booking['id']
+assert admin.call('/admin/bookings')[0]==400
+assert admin.call('/admin/bookings?date=bad')[0]==400
+assert admin.call('/admin/bookings?date=0001-01-01')[0]==400
+assert admin.call('/admin/bookings?date=9999-12-31')[0]==400
+assert admin.call(f'/admin/bookings?date={day}&providerId=-1')[0]==400
+status,listing=admin.call(f'/admin/bookings?date={day}&providerId={pid}');assert status==200
+assert listing['truncated'] is False and len(listing['bookings'])==1
+assert listing['bookings'][0]['id']==aid and listing['bookings'][0]['serviceName']=='Test service'
+assert not any(row['id']==aid for row in admin.call(f'/admin/bookings?date={day}&providerId=1')[1]['bookings'])
+assert not any(row['id']==aid for row in admin.call(f'/admin/bookings?date={day+timedelta(days=1)}')[1]['bookings'])
+assert admin.call(f'/bookings/{aid}')[0]==404 # Customer route retains ownership rules even for admin.
+assert admin.call(f'/admin/bookings/{aid}/cancel','POST',csrf=False)[0]==400
+assert admin.call(hours_path,'DELETE')[0]==204
+assert a.call(f'/services/{new_service["id"]}/available-slots?date={day}')[1]==[]
+assert a.call(f'/bookings/{aid}')[1]['status']==0 # Closing a day preserves existing appointments.
+assert admin.call(f'/admin/bookings/{aid}/cancel','POST')[0]==204
+assert admin.call(f'/admin/bookings/{aid}/cancel','POST')[0]==204
+assert admin.call('/admin/bookings/2147483647/cancel','POST')[0]==404
+assert a.call(f'/bookings/{aid}')[1]['status']==1
+assert admin.call('/auth/logout','POST')[0]==204
+assert admin.call(f'/admin/bookings?date={day}')[0]==401
+print('Administrator CLI, refreshed role claims, role denial, CSRF, management, day filters and cancellation: OK',flush=True)
+
 assert a.call('/auth/logout','POST')[0]==204
 assert a.call('/bookings')[0]==401
 print('Owner cancellations: 204; logout removes private access; test bookings cancelled',flush=True)

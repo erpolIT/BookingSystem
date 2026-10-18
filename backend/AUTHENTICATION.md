@@ -29,14 +29,18 @@ Existing bookings have UserId = NULL. They remain in the database, continue to
 block time if confirmed, and are not claimed automatically based on email.
 
 Provider, service and working-hours mutations require the Administrator role.
-No registration endpoint grants that role; an administrator provisioning flow
-is outside this stage. Browsing providers, services and availability stays public.
+No registration endpoint grants that role. A trusted server operator can grant it
+to an existing account with `dotnet run -- --grant-admin account@example.com`.
+Sign out and in again to refresh role claims. Browsing providers, services and
+availability stays public. The React panel is shown for administrators, while
+the API independently enforces the role on every management endpoint.
 
 ## Current scope
 
 Implemented: registration, login, logout, own-booking list, ownership enforcement,
 CSRF protection, password policy, temporary lockout and scoped idempotency.
-Email verification, password recovery and an administrator UI are not implemented.
+Administrator provisioning and the management UI are implemented.
+Email verification and password recovery are not implemented.
 
 ## Verification
 

@@ -43,6 +43,11 @@ public class WorkingHoursController : ControllerBase
         if (!await _dbContext.Providers.AnyAsync(provider => provider.Id == providerId, cancellationToken))
             return NotFound();
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(72100, {providerId});", cancellationToken);
+        // Share the provider lock with booking creation so availability reads
+        // cannot race a schedule change. Existing bookings remain unchanged.
         // Atomic upsert prevents duplicate days even when requests arrive concurrently.
         var weekday = day;
         var start = request.StartTime!.Value;
@@ -53,6 +58,7 @@ public class WorkingHoursController : ControllerBase
             ON CONFLICT (""ProviderId"", ""DayOfWeek"")
             DO UPDATE SET ""StartTime"" = EXCLUDED.""StartTime"", ""EndTime"" = EXCLUDED.""EndTime"";",
             cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return NoContent();
     }
@@ -65,9 +71,13 @@ public class WorkingHoursController : ControllerBase
         if (!await _dbContext.Providers.AnyAsync(provider => provider.Id == providerId, cancellationToken))
             return NotFound();
 
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(72100, {providerId});", cancellationToken);
         await _dbContext.WorkingHours
             .Where(hours => hours.ProviderId == providerId && hours.DayOfWeek == (DayOfWeek)day)
             .ExecuteDeleteAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return NoContent();
     }
 }

@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> GetCurrentUser()
     {
         var user = await _users.GetUserAsync(User);
-        return Ok(new { user = user is null ? null : new { id = user.Id, email = user.Email } });
+        return Ok(new { user = user is null ? null : new { id = user.Id, email = user.Email, isAdministrator = User.IsInRole("Administrator") } });
     }
 
     [HttpPost("register")]
@@ -62,7 +62,7 @@ public class AuthController : ControllerBase
         if (!result.Succeeded)
             return Unauthorized(new { message = "Invalid email or password, or the account is temporarily locked." });
         var user = await _users.FindByEmailAsync(request.Email.Trim());
-        return Ok(new { user = new { id = user!.Id, email = user.Email } });
+        return Ok(new { user = new { id = user!.Id, email = user.Email, isAdministrator = await _users.IsInRoleAsync(user, "Administrator") } });
     }
 
     [Authorize]

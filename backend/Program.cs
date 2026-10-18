@@ -67,6 +67,14 @@ if (args.Contains("--seed-demo"))
     await DemoData.SeedAsync(app.Services);
     return;
 }
+if (args.Contains("--grant-admin"))
+{
+    var index = Array.IndexOf(args, "--grant-admin");
+    if (index + 1 >= args.Length || args[index + 1].StartsWith("--"))
+        throw new ArgumentException("Usage: dotnet run -- --grant-admin account@example.com");
+    await AdministratorAccount.GrantAsync(app.Services, args[index + 1]);
+    return;
+}
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

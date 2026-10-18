@@ -56,3 +56,14 @@ button:disabled { cursor: wait; }
 .booking-row { display: flex; gap: 20px; align-items: center; justify-content: space-between; padding: 20px 0; border-top: 1px solid #e0e6e0; }
 .booking-row p { margin-top: 8px; }
 @media (max-width: 540px) { .booking-row { flex-direction: column; align-items: flex-start; } }
+
+.admin-panel { margin-bottom: 24px; border-color: #25675c; }
+.admin-panel h3 { margin: 24px 0 16px; }
+.admin-panel form { margin: 20px 0 28px; }
+.admin-panel legend { font-weight: 600; margin-bottom: 16px; }
+.admin-panel select { font: inherit; color: inherit; background: white; border: 1px solid #a9b9b0; border-radius: 8px; padding: 12px; max-width: 100%; }
+.admin-panel select:focus-visible { outline: 3px solid #1b7768; outline-offset: 3px; }
+.admin-panel ul { padding-left: 22px; line-height: 1.8; }
+.admin-panel .date-label { margin-top: 16px; }
+.admin-panel .booking-row { overflow-wrap: anywhere; }
+.admin-editor { margin-top: 24px; border-top: 1px solid #e0e6e0; }

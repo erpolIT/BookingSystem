@@ -16,6 +16,7 @@ The project focuses on backend rules, concurrency, authentication and automated 
 - Database-enforced conflict prevention for concurrent bookings.
 - Per-account idempotency keys and safe retry of uncertain submissions.
 - Loading, empty, error and conflict states in the React client.
+- Administrator panel for providers, services, weekly schedules and daily bookings.
 
 ## Prerequisites
 
@@ -89,6 +90,27 @@ weekday. Submit a booking, inspect **My bookings**, then cancel it to free the s
 The interface is in English, with prices in PLN and appointment times in Europe/Warsaw. `npm run preview` serves a build preview only;
 it does not provide the development API proxy.
 
+## Administrator access
+
+Register an account in the application first. From `backend`, using the same
+database configuration as the API, run:
+
+```sh
+dotnet run -- --grant-admin your-account@example.com
+```
+
+This command grants the role only to an existing account; it never creates a
+default password or accepts a role from public registration. It is repeatable.
+Sign out and sign in again to receive the new permissions. The Administrator
+panel appears above the customer booking flow. It supports adding providers and
+services, setting/removing weekly hours and viewing/cancelling daily appointments.
+Dates and times use Europe/Warsaw. Changing hours affects future availability;
+existing bookings remain in place and must be reviewed separately. The daily
+list is capped at 500 entries and indicates truncation; filter by provider.
+
+Role provisioning requires trusted access to the server and its database
+configuration. There is no public role-management endpoint.
+
 ## Verification
 
 From the repository root:
@@ -139,9 +161,9 @@ docs/                        Architecture, screenshots and interview notes
 - [Authentication and CSRF](backend/AUTHENTICATION.md)
 
 This is a portfolio MVP, not a production-ready booking service. There is no email
-verification, password recovery, payment flow, admin UI or leave/break scheduling.
-Management endpoints require an Administrator role, and role provisioning is not
-exposed publicly. Production would additionally need verified email flows, abuse
+verification, password recovery, payment flow or leave/break scheduling.
+Management endpoints require an Administrator role. Role provisioning is a
+server-side command and is not exposed publicly. Production would additionally need verified email flows, abuse
 controls, hosting/TLS configuration, key management, monitoring and backups.
 
 ## Before publishing
