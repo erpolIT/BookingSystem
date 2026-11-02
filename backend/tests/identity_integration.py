@@ -47,6 +47,15 @@ day=datetime.now(ZoneInfo('Europe/Warsaw')).date()+timedelta(days=7)
 while day.weekday()!=0:day+=timedelta(days=1)
 _,slots=a.call(f'/services/{service["id"]}/available-slots?date={day}')
 payload={'serviceId':service['id'],'startTime':slots[0]['startTime'],'customerName':'Identity Test','customerEmail':'identity-customer@example.com','userId':users[1]['id'],'priceAtBooking':0.01,'price':0.01}
+# Contract boundaries must stay stable when booking logic moves to an application service.
+status,body=a.call('/bookings','POST',payload)
+assert status==400 and body['code']=='invalid_idempotency_key'
+status,body=a.call('/bookings','POST',payload,{'Idempotency-Key':str(uuid.UUID(int=0))})
+assert status==400 and body['code']=='invalid_idempotency_key'
+status,body=a.call('/bookings','POST',{**payload,'customerName':'  '},{'Idempotency-Key':str(uuid.uuid4())})
+assert status==400 and 'CustomerName' in body['errors']
+assert a.call('/bookings','POST',{**payload,'serviceId':2147483647},{'Idempotency-Key':str(uuid.uuid4())})[0]==404
+print('Booking creation contract: missing/empty key 400, whitespace name 400, missing service 404',flush=True)
 key=str(uuid.uuid4());headers={'Idempotency-Key':key}
 with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda _:a.call('/bookings','POST',payload,headers),range(2)))
 assert sorted(s for s,_ in results)==[200,201],[(s,body.get('code') if isinstance(body,dict) else None) for s,body in results]

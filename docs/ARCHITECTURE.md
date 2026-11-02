@@ -5,6 +5,23 @@ controllers validate HTTP input and enforce authorization. EF Core handles
 persistence in PostgreSQL. `AvailabilityService` loads data, while `SlotGenerator`
 and `BookingTimeRules` evaluate scheduling without database dependencies.
 
+## Booking creation responsibilities
+
+`BookingsController` handles HTTP binding, the required idempotency header and
+the authenticated account. It passes a `CreateBookingCommand` to `BookingService`
+and maps typed `CreateBookingResult` outcomes to the existing HTTP responses.
+The service owns normalization, request hashing, idempotency lookup, transaction
+lifetime, advisory locks, availability checks, price snapshot and persistence.
+It does not depend on MVC, HttpContext, response status codes or HTTP request DTOs.
+Unexpected database errors still propagate to the global exception handler;
+known exclusion conflicts return a booking outcome after transaction disposal.
+
+Both services are Scoped and receive the same request-scoped DbContext.
+There is no new repository abstraction or separate service deployment. Customer
+history/read/cancellation remain in the controller; this extraction concerns
+the create-booking use case. Routes, payloads, response codes/messages, ownership,
+hash format and migrations are unchanged.
+
 ## Booking invariants
 
 - A service belongs to one provider, with its own price and duration.

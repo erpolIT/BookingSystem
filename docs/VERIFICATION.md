@@ -51,3 +51,15 @@ English interface update: frontend build, ESLint and .NET build passed. Browser 
   legacy unknown prices stay NULL; zero/negative database prices are rejected.
 - The database name was verified before writes and an API fixture marker checked
   before API writes. The disposable database was removed after verification.
+
+## Booking service extraction — 2026-11-02
+
+- Booking creation now runs in a Scoped BookingService with HTTP-independent
+  command and result types; the controller maps outcomes to existing responses.
+- .NET build and all 25 unit tests passed.
+- API checks passed against a verified disposable database: 201/200 replay, 409
+  conflict/mismatch, 400 missing/empty key and whitespace name, 404 missing service,
+  authentication, ownership, CSRF, role denial and five competing booking races.
+- Price snapshot checks passed after extraction, including catalogue changes and
+  idempotent replays. Main application data and schema were not changed.
+- Temporary verification database was removed after testing.

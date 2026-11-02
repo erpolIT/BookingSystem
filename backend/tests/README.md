@@ -14,7 +14,8 @@ BOOKING_TEST_API=http://localhost:5130/api python3 backend/tests/identity_integr
 Python 3.9+ and only standard-library modules are required. The script creates
 three random test accounts (including one administrator) and verifies cookie authentication, missing/stale CSRF,
 owner-only reads/list/cancellations, forged user IDs, management-role denial,
-concurrent idempotent retries, payload mismatch, independent competing bookings,
+concurrent idempotent retries, payload mismatch, missing/empty idempotency keys,
+whitespace customer names, missing services, independent competing bookings,
 and logout. It also invokes the role-provisioning command, verifies admin booking
 visibility/cancellation, normal-account denial, CSRF, provider/service creation and
 working-hours validation/update/removal. Run from the repository root with the

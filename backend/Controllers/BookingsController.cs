@@ -4,12 +4,8 @@ using BookingSystem.Models;
 using BookingSystem.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 
 namespace BookingSystem.Controllers;
 
@@ -20,12 +16,12 @@ namespace BookingSystem.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly BookingDbContext _dbContext;
-    private readonly AvailabilityService _availability;
+    private readonly BookingService _bookings;
 
-    public BookingsController(BookingDbContext dbContext, AvailabilityService availability)
+    public BookingsController(BookingDbContext dbContext, BookingService bookings)
     {
         _dbContext = dbContext;
-        _availability = availability;
+        _bookings = bookings;
     }
 
     [HttpGet]
@@ -55,74 +51,30 @@ public class BookingsController : ControllerBase
             return BadRequest(new { code = "invalid_idempotency_key", message = "A non-empty UUID Idempotency-Key header is required." });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var name = request.CustomerName.Trim();
-        if (name.Length < 2)
-        {
-            ModelState.AddModelError(nameof(request.CustomerName), "CustomerName must contain at least two non-whitespace characters.");
-            return ValidationProblem(ModelState);
-        }
-        var start = request.StartTime!.Value.ToUniversalTime();
-        var email = request.CustomerEmail.Trim();
-        var requestHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(new { request.ServiceId, StartTime = start, CustomerName = name, CustomerEmail = email }))));
+        var result = await _bookings.CreateAsync(new CreateBookingCommand(userId, request.ServiceId,
+            request.StartTime!.Value, request.CustomerName, request.CustomerEmail, idempotencyKey.Value),
+            cancellationToken);
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-        // Serialize requests with the same key across all API instances.
-        // The lock is released automatically when the transaction ends.
-        var lockKey = BitConverter.ToInt64(SHA256.HashData(idempotencyKey.Value.ToByteArray()), 0);
-        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT pg_advisory_xact_lock({lockKey});", cancellationToken);
-
-        var existing = await _dbContext.Bookings.AsNoTracking()
-            .FirstOrDefaultAsync(booking => booking.IdempotencyKey == idempotencyKey && booking.UserId == userId, cancellationToken);
-        if (existing is not null)
+        switch (result)
         {
-            if (existing.RequestHash != requestHash)
+            case CreateBookingResult.Created created:
+                return CreatedAtAction(nameof(GetBooking), new { id = created.Booking.Id }, created.Booking);
+            case CreateBookingResult.AlreadyProcessed replay:
+                return Ok(replay.Booking);
+            case CreateBookingResult.InvalidCustomerName:
+                ModelState.AddModelError(nameof(request.CustomerName), "CustomerName must contain at least two non-whitespace characters.");
+                return ValidationProblem(ModelState);
+            case CreateBookingResult.IdempotencyKeyReused:
                 return Conflict(new { code = "idempotency_key_reused", message = "This key was used with different booking data." });
-            await transaction.CommitAsync(cancellationToken);
-            return Ok(existing);
+            case CreateBookingResult.ServiceNotFound:
+                return NotFound("Service does not exist.");
+            case CreateBookingResult.SlotUnavailable:
+                return Conflict(new { code = "slot_unavailable", message = "The requested time is unavailable or outside the booking schedule." });
+            case CreateBookingResult.SlotJustBooked:
+                return Conflict(new { code = "slot_unavailable", message = "This time was just booked. Choose another slot." });
+            default:
+                throw new InvalidOperationException("Unknown booking creation outcome.");
         }
-
-        var service = await _dbContext.Services.AsNoTracking()
-            .FirstOrDefaultAsync(service => service.Id == request.ServiceId, cancellationToken);
-        if (service is null) return NotFound("Service does not exist.");
-
-        // Exclusion checks on simultaneous inserts may deadlock in PostgreSQL.
-        // Serialize each provider's booking writes before reading availability.
-        // The two-int namespace is distinct from the bigint idempotency locks.
-        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT pg_advisory_xact_lock(72100, {service.ProviderId});", cancellationToken);
-
-        var slots = await _availability.GetSlots(service, AvailabilityService.GetLocalDate(start), cancellationToken);
-        if (!slots.Any(slot => slot.StartTime == start))
-            return Conflict(new { code = "slot_unavailable", message = "The requested time is unavailable or outside the booking schedule." });
-
-        var booking = new Booking
-        {
-            UserId = userId,
-            IdempotencyKey = idempotencyKey,
-            RequestHash = requestHash,
-            ServiceId = service.Id,
-            ProviderId = service.ProviderId,
-            StartTime = start,
-            EndTime = start.AddMinutes(service.DurationMinutes),
-            PriceAtBooking = service.Price,
-            Status = BookingStatus.Confirmed,
-            CustomerName = name,
-            CustomerEmail = email
-        };
-        _dbContext.Bookings.Add(booking);
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
-            { SqlState: PostgresErrorCodes.ExclusionViolation, ConstraintName: "EX_Bookings_NoOverlap" })
-        {
-            return Conflict(new { code = "slot_unavailable", message = "This time was just booked. Choose another slot." });
-        }
-        await transaction.CommitAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetBooking), new { id = booking.Id }, booking);
     }
 
     [HttpPost("{id:int}/cancel")]
