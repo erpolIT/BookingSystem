@@ -46,11 +46,12 @@ _,services=a.call('/services');service=next(s for s in services if s['providerId
 day=datetime.now(ZoneInfo('Europe/Warsaw')).date()+timedelta(days=7)
 while day.weekday()!=0:day+=timedelta(days=1)
 _,slots=a.call(f'/services/{service["id"]}/available-slots?date={day}')
-payload={'serviceId':service['id'],'startTime':slots[0]['startTime'],'customerName':'Identity Test','customerEmail':'identity-customer@example.com','userId':users[1]['id']}
+payload={'serviceId':service['id'],'startTime':slots[0]['startTime'],'customerName':'Identity Test','customerEmail':'identity-customer@example.com','userId':users[1]['id'],'priceAtBooking':0.01,'price':0.01}
 key=str(uuid.uuid4());headers={'Idempotency-Key':key}
 with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda _:a.call('/bookings','POST',payload,headers),range(2)))
 assert sorted(s for s,_ in results)==[200,201],[(s,body.get('code') if isinstance(body,dict) else None) for s,body in results]
 bid=results[0][1]['id'];assert all(body['id']==bid for _,body in results)
+assert all(body['priceAtBooking']==service['price'] for _,body in results), 'Client price must be ignored'
 assert a.call('/bookings','POST',{**payload,'customerName':'Changed'},headers)[0]==409
 assert a.call('/bookings/'+str(bid))[0]==200
 assert b.call('/bookings/'+str(bid))[0]==404
@@ -120,6 +121,7 @@ assert admin.call(f'/admin/bookings?date={day}&providerId=-1')[0]==400
 status,listing=admin.call(f'/admin/bookings?date={day}&providerId={pid}');assert status==200
 assert listing['truncated'] is False and len(listing['bookings'])==1
 assert listing['bookings'][0]['id']==aid and listing['bookings'][0]['serviceName']=='Test service'
+assert listing['bookings'][0]['priceAtBooking']==50
 assert not any(row['id']==aid for row in admin.call(f'/admin/bookings?date={day}&providerId=1')[1]['bookings'])
 assert not any(row['id']==aid for row in admin.call(f'/admin/bookings?date={day+timedelta(days=1)}')[1]['bookings'])
 assert admin.call(f'/bookings/{aid}')[0]==404 # Customer route retains ownership rules even for admin.

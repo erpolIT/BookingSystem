@@ -52,3 +52,16 @@ provider advisory transaction lock with booking creation. Existing appointments
 are preserved when hours change; an administrator must review them separately.
 Availability is an advisory view, while the exclusion constraint is the final
 check against double booking.
+
+## Booking price snapshots
+
+New bookings copy the service price into `PriceAtBooking` (`numeric(10,2)`, PLN).
+The create-booking contract does not accept a price; clients cannot choose it.
+Customer history, confirmation and the administrator list display the stored
+value. Idempotent replays return the original booking and original price.
+Legacy bookings keep NULL because their historical prices cannot be reconstructed
+reliably from today's catalogue; the interface shows “Price not recorded”.
+The migration adds a nullable column without backfilling or a zero default.
+Existing start/end times already preserve the booked duration independently of
+later service-duration changes. Snapshot checks exercise a real catalogue change,
+replay, subsequent booking, legacy NULL display data and database price validation.

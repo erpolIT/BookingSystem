@@ -15,6 +15,7 @@ The project focuses on backend rules, concurrency, authentication and automated 
 - CSRF validation and owner-only booking history/cancellation.
 - Database-enforced conflict prevention for concurrent bookings.
 - Per-account idempotency keys and safe retry of uncertain submissions.
+- Booking prices copied from the server-side catalogue and preserved independently of future price changes.
 - Loading, empty, error and conflict states in the React client.
 - Administrator panel for providers, services, weekly schedules and daily bookings.
 
@@ -133,7 +134,8 @@ BOOKING_TEST_API=http://localhost:5130/api python3 backend/tests/identity_integr
 
 This integration check writes test accounts/bookings into the chosen database.
 Successful runs cancel their appointments; test accounts and cancelled history
-remain. See [integration checks](backend/tests/README.md).
+remain. Price-snapshot checks additionally require an explicitly configured disposable
+database; see [integration checks](backend/tests/README.md).
 
 [GitHub Actions](.github/workflows/ci.yml) defines backend tests, frontend build/lint,
 and API integration checks against an isolated PostgreSQL service. Its hosted run

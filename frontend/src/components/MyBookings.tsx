@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Booking } from '../types'
 import { mutateApi } from '../api'
+import { formatBookingPrice } from '../formatBookingPrice'
 
 type Props = { onCancelled: (id: number) => void; disabled: boolean }
 type State = { status: 'loading' } | { status: 'error' } | { status: 'success'; bookings: Booking[] }
@@ -55,6 +56,7 @@ export function MyBookings({ onCancelled, disabled }: Props) {
         <article className="booking-row" key={booking.id}>
           <div><strong>Appointment #{booking.id}</strong>
             <p>{formatter.format(new Date(booking.startTime))} — Warsaw time</p>
+            <p>{formatBookingPrice(booking.priceAtBooking)}</p>
             <p>{booking.status === 1 ? 'Cancelled' : 'Confirmed'}</p></div>
           {booking.status === 0 && <button className="retry-button" type="button" disabled={disabled || cancellingId !== null}
             onClick={() => void cancel(booking.id)}>{cancellingId === booking.id ? 'Cancelling…' : `Cancel appointment #${booking.id}`}</button>}

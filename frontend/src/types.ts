@@ -17,6 +17,7 @@ export type Booking = {
   startTime: string
   endTime: string
   status: number
+  priceAtBooking: number | null
   customerName: string
   customerEmail: string
 }

@@ -17,6 +17,8 @@ public class Booking
     public int ProviderId { get; set; }
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
+    // Null means the price was not recorded for a legacy booking.
+    public decimal? PriceAtBooking { get; set; }
     public BookingStatus Status { get; set; }
     public required string CustomerName { get; set; }
     public required string CustomerEmail { get; set; }

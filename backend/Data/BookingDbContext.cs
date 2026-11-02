@@ -28,6 +28,7 @@ public class BookingDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(booking => new { booking.UserId, booking.IdempotencyKey }).IsUnique();
             entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(booking => booking.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(booking => booking.PriceAtBooking).HasPrecision(10, 2);
             entity.Property(booking => booking.RequestHash).HasMaxLength(64);
             entity.Property(booking => booking.CustomerName).HasMaxLength(100).IsRequired();
             entity.Property(booking => booking.CustomerEmail).HasMaxLength(254).IsRequired();
@@ -38,6 +39,7 @@ public class BookingDbContext : IdentityDbContext<ApplicationUser>
             entity.ToTable("Bookings", table =>
             {
                 table.HasCheckConstraint("CK_Bookings_Time", "\"StartTime\" < \"EndTime\"");
+                table.HasCheckConstraint("CK_Bookings_Price", "\"PriceAtBooking\" IS NULL OR \"PriceAtBooking\" > 0");
                 table.HasCheckConstraint("CK_Bookings_Status", "\"Status\" IN (0, 1)");
             });
         });

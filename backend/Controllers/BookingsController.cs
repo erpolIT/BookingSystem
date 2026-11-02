@@ -106,6 +106,7 @@ public class BookingsController : ControllerBase
             ProviderId = service.ProviderId,
             StartTime = start,
             EndTime = start.AddMinutes(service.DurationMinutes),
+            PriceAtBooking = service.Price,
             Status = BookingStatus.Confirmed,
             CustomerName = name,
             CustomerEmail = email

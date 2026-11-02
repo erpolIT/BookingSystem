@@ -8,6 +8,7 @@ import { AuthPanel } from './components/AuthPanel'
 import { MyBookings } from './components/MyBookings'
 import { AdminPanel } from './components/AdminPanel'
 import { mutateApi } from './api'
+import { formatBookingPrice } from './formatBookingPrice'
 
 type Provider = { id: number; name: string }
 type ProviderState =
@@ -255,6 +256,7 @@ function App() {
         <section className="provider-section confirmation" aria-labelledby="confirmation-heading">
           <h2 id="confirmation-heading">{confirmedBooking.status === 1 ? 'Booking cancelled' : 'Booking confirmed'}</h2>
           <p>Booking reference: {confirmedBooking.id}</p>
+          <p>{formatBookingPrice(confirmedBooking.priceAtBooking)}</p>
           <p>{bookingDateFormatter.format(new Date(confirmedBooking.startTime))} — Warsaw time</p>
           {confirmedBooking.status === 0 && (
             <button className="retry-button" type="button" disabled={cancelling} onClick={() => void cancelBooking()}>

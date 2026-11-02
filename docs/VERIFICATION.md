@@ -37,3 +37,17 @@ English interface update: frontend build, ESLint and .NET build passed. Browser 
   removed. Tests were repeated successfully in a separate temporary database,
   checking current_database() before writes; that database was removed afterwards.
   Earlier claims of schema isolation are superseded by this database-level check.
+
+## Booking price snapshot — 2026-11-02
+
+- .NET tests (25), TypeScript production build and ESLint passed.
+- EF reported no pending model changes after generating the migration.
+- Migrated a disposable database from AddIdentityAccounts with an existing
+  booking: the record was retained and PriceAtBooking remained NULL.
+- Identity/administrator API integration checks passed, including prices in the
+  administrator list and ignoring client-supplied booking prices.
+- Real PostgreSQL/API price checks passed: catalogue changes preserve historical
+  prices and replay results; subsequent bookings use the new decimal price;
+  legacy unknown prices stay NULL; zero/negative database prices are rejected.
+- The database name was verified before writes and an API fixture marker checked
+  before API writes. The disposable database was removed after verification.

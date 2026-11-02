@@ -30,7 +30,7 @@ public class AdminBookingsController(BookingDbContext db) : ControllerBase
             orderby booking.StartTime, booking.Id
             select new { booking.Id, booking.ServiceId, booking.ProviderId, ProviderName = provider.Name,
                 ServiceName = service.Name, booking.StartTime, booking.EndTime,
-                booking.Status, booking.CustomerName, booking.CustomerEmail })
+                booking.Status, booking.PriceAtBooking, booking.CustomerName, booking.CustomerEmail })
             .Take(501).ToListAsync(cancellationToken);
         return Ok(new { bookings = rows.Take(500), truncated = rows.Count > 500 });
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { mutateApi } from '../api'
+import { formatBookingPrice } from '../formatBookingPrice'
 import type { AdminBooking, Provider, Service, WorkingHours } from '../types'
 
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -226,6 +227,7 @@ function BookingList({ date, providerId, onChanged }: { date: string; providerId
         <strong>#{booking.id} · {timeFormatter.format(new Date(booking.startTime))}–{timeFormatter.format(new Date(booking.endTime))}</strong>
         <p>{booking.providerName} · {booking.serviceName}</p>
         <p>{booking.customerName} · {booking.customerEmail}</p>
+        <p>{formatBookingPrice(booking.priceAtBooking)}</p>
         <p>{booking.status === 0 ? 'Confirmed' : 'Cancelled'}</p>
       </div>
       {booking.status === 0 && <button type="button" className="retry-button" disabled={busy} onClick={() => void cancel(booking)}>Cancel appointment</button>}

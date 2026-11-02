@@ -110,6 +110,10 @@ namespace BookingSystem.Migrations
                     b.Property<Guid?>("IdempotencyKey")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("PriceAtBooking")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<int>("ProviderId")
                         .HasColumnType("integer");
 
@@ -140,6 +144,8 @@ namespace BookingSystem.Migrations
 
                     b.ToTable("Bookings", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Bookings_Price", "\"PriceAtBooking\" IS NULL OR \"PriceAtBooking\" > 0");
+
                             t.HasCheckConstraint("CK_Bookings_Status", "\"Status\" IN (0, 1)");
 
                             t.HasCheckConstraint("CK_Bookings_Time", "\"StartTime\" < \"EndTime\"");

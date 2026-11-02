@@ -69,6 +69,7 @@ jobs:
             sleep 1
           done
           BOOKING_TEST_API=http://localhost:5130/api python3 backend/tests/identity_integration.py
+          BOOKING_TEST_API=http://localhost:5130/api dotnet run --project tests/BookingSystem.PriceSnapshotChecks
       - name: API logs on failure
         if: failure()
         run: cat /tmp/booking-api.log 2>/dev/null || true

@@ -30,3 +30,25 @@ an isolated disposable PostgreSQL service, never Neon credentials or User Secret
 For this portfolio verification, all migrations, repeated demo seeding and these
 checks also passed against a fresh temporary PostgreSQL database that was removed
 after the test, preserving the original application data.
+
+## Price snapshot checks
+
+The CI job also runs a .NET console-based integration check:
+
+```sh
+BOOKING_TEST_API=http://localhost:5130/api dotnet run --project tests/BookingSystem.PriceSnapshotChecks
+```
+
+It requires `ConnectionStrings__BookingDatabase` explicitly in the environment;
+it does not load User Secrets. Use the same disposable database as the running API.
+The database must be named `booking_ci` or start with `booking_verify_`. The check
+verifies `current_database()` before writes and confirms its unique fixture is
+visible through the API before creating an account or booking. Never point these
+checks at application data. Database naming checks are an accidental-use guard,
+not a replacement for separate credentials and permissions.
+
+It verifies that a forged client price is ignored, changing a service price from
+60 to 80.25 PLN preserves existing bookings and idempotent replays, new bookings
+use the updated price, legacy NULL prices remain unknown, customer history
+returns the snapshot, and PostgreSQL rejects zero/negative stored prices.
+Successful checks cancel their bookings; dispose of the test database afterwards.
